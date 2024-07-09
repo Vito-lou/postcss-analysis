@@ -1,0 +1,142 @@
+# PostCSS Architecture
+
+PostCSS is a tool for transforming CSS with JavaScript. It operates through several key components that process CSS code. Below is an overview of its architecture:
+
+## 1. Tokenizer
+
+The **Tokenizer** is the first step in the PostCSS pipeline. It reads the CSS source code and breaks it down into tokens. Tokens are the smallest units of meaning in CSS, such as identifiers, keywords, and punctuation.
+
+- **Input**: Raw CSS source code.
+- **Output**: Stream of tokens.
+- **Example**: For the following CSS
+
+```
+.className { color: #FFF; }
+```
+
+corresponding tokens from PostCSS might look like:
+
+```
+  [
+  ["word", ".className", 1, 1, 1, 10],
+  ["space", " "],
+  ["{", "{", 1, 12],
+  ["space", " "],
+  ["word", "color", 1, 14, 1, 18],
+  [":", ":", 1, 19],
+  ["space", " "],
+  ["word", "#FFF", 1, 21, 1, 23],
+  [";", ";", 1, 24],
+  ["space", " "],
+  ["}", "}", 1, 26]
+  ]
+```
+
+## 2. Parser
+
+The **Parser** takes the stream of tokens from the Tokenizer and converts them into a more structured format known as an Abstract Syntax Tree (AST). The AST represents the syntactic structure of the CSS code.
+
+- **Input**: Stream of tokens.
+- **Output**: Abstract Syntax Tree (AST).
+- **Example**: Using the tokens above, the AST might look like:
+
+```
+{
+  "type": "rule",
+  "selector": ".className",
+  "declarations": [
+    {
+      "type": "declaration",
+      "property": "color",
+      "value": "#FFF",
+      "position": {
+        "start": { "line": 1, "column": 14 },
+        "end": { "line": 1, "column": 24 }
+      }
+    }
+  ],
+  "position": {
+    "start": { "line": 1, "column": 1 },
+    "end": { "line": 1, "column": 27 }
+  }
+}
+```
+
+## 3. Plugins
+
+PostCSS plugins are JavaScript functions that manipulate the AST. They can perform a wide range of tasks, such as adding new properties, removing old ones, or transforming existing styles.
+
+- **Input**: Abstract Syntax Tree (AST).
+- **Output**: Modified Abstract Syntax Tree (AST).
+- **Example**: If we want to change the color to #000, we can create a postcss plugin to achieve that:
+
+```
+// postcss-change-color.js
+const postcss = require('postcss');
+
+module.exports = postcss.plugin('postcss-change-color', () => {
+    return (root) => {
+        root.walkDecls(decl => {
+            if (decl.prop.toLowerCase().includes('color')) {
+                decl.value = '#000';
+            }
+        });
+    };
+});
+```
+
+```
+// postcss.config.js
+module.exports = {
+    plugins: [
+        require('./postcss-change-color')
+    ]
+};
+```
+
+## 4. Stringifier
+
+The **Stringifier** takes the modified AST from the plugins and converts it back into a CSS string. This string is the final output of the PostCSS process.
+
+- **Input**: Modified Abstract Syntax Tree (AST).
+- **Output**: CSS string.
+- **Example** The modified AST would be as following:
+
+```
+{
+  "type": "rule",
+  "selector": ".className",
+  "declarations": [
+    {
+      "type": "declaration",
+      "property": "color",
+      "value": "#000",
+      "position": {
+        "start": { "line": 1, "column": 14 },
+        "end": { "line": 1, "column": 24 }
+      }
+    }
+  ],
+  "position": {
+    "start": { "line": 1, "column": 1 },
+    "end": { "line": 1, "column": 27 }
+  }
+}
+```
+
+And if would be converted into a css string as :
+
+```
+.className { color: #000; }
+```
+
+## Summary
+
+The flow of PostCSS can be summarized as follows:
+
+1. **Tokenizer**: Converts raw CSS into tokens.
+2. **Parser**: Converts tokens into an AST.
+3. **Plugins**: Manipulate the AST.
+4. **Stringifier**: Converts the modified AST back into CSS.
+
+This architecture allows PostCSS to be highly modular and extensible, enabling a wide range of transformations and optimizations to be applied to CSS code.

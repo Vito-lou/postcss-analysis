@@ -22,6 +22,8 @@ import postcss, {
 import Processor from '../lib/processor.js'
 import Rule from '../lib/rule.js'
 
+let processor = new Processor()
+
 test.after.each(() => {
   restoreAll()
 })
@@ -73,7 +75,6 @@ test('uses custom syntax for document', async () => {
       stringify: customStringifier
     }
   })
-  console.log('rss', result.css)
   is(
     result.css,
     '<html>\n<head>\n<style id="id1">' +
@@ -84,4 +85,8 @@ test('uses custom syntax for document', async () => {
   )
 })
 
+test('stringifies css', () => {
+  let result = new LazyResult(processor, 'a {}', {})
+  is(`${result}`, result.css)
+})
 test.run()
